@@ -115,9 +115,10 @@ struct ContentView: View {
                 print("Inactive")
             } else if newPhase == .active {
                 print ("Active")
-            } else if newPhase == .background{ 
+            } else if newPhase == .background{
                 print ("background")
             }
+            
             
         }
         .navigationTitle("icanhazdadjoke?")
