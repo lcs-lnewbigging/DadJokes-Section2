@@ -16,8 +16,8 @@ struct ContentView: View {
     
     
     @State var currentJoke: DadJoke = DadJoke(id: "",
-                                       joke: "Knock, knock...",
-                                       status: 0)
+                                              joke: "Knock, knock...",
+                                              status: 0)
     
     // This will keep track of our list of favourite jokes
     @State var favourites: [DadJoke] = []   // empty list to start
@@ -42,7 +42,7 @@ struct ContentView: View {
             
             Image(systemName: "heart.circle")
                 .font(.largeTitle)
-                //                      CONDITION                        true   false
+            //                      CONDITION                        true   false
                 .foregroundColor(currentJokeAddedToFavourites == true ? .red : .secondary)
                 .onTapGesture {
                     
@@ -54,7 +54,7 @@ struct ContentView: View {
                         
                         // Record that we have marked this as a favourite
                         currentJokeAddedToFavourites = true
-
+                        
                     }
                     
                 }
@@ -90,7 +90,7 @@ struct ContentView: View {
             }
             
             Spacer()
-                        
+            
         }
         // When the app opens, get a new joke from the web service
         .task {
@@ -106,7 +106,10 @@ struct ContentView: View {
             // ALSO: Any code below this call will run before the function call completes.
             await loadNewJoke()
             
+            
             print("I tried to load a new joke")
+            
+            loadFavourites()
         }
         //React to changes of state for the app (foreground, background, inactive)
         .onChange(of: scenePhase) { newPhase in
@@ -117,8 +120,12 @@ struct ContentView: View {
                 print ("Active")
             } else if newPhase == .background{
                 print ("background")
+                
+                //permantly save the list of tasks
+                persistFavourites()
+                
+                
             }
-            
             
         }
         .navigationTitle("icanhazdadjoke?")
@@ -171,10 +178,79 @@ struct ContentView: View {
             // populates
             print(error)
         }
-
+        
     }
     
+    func persistFavourites() {
+        //Get a location to store data
+        let fileName = getDocumentsDirectory() .appendingPathComponent(saveFavouritesLabel)
+        print(fileName)
+        
+        //Try to encode the data in out list of Favourites to JSON
+        
+        do{
+            //Create JSON Encoder
+            let encoder = JSONEncoder()
+            
+            //configured to "pretty print" the JSON
+            encoder.outputFormatting = .prettyPrinted
+            
+            //Encode the list of favourites we've collected
+            let data = try encoder.encode(favourites)
+            
+            // Write the JSON to a file in the file name location we came up with earlier
+            try data.write(to: fileName, options: [ .atomicWrite, .completeFileProtection])
+            
+            //See the data that was writen
+            print ("Saved data to the Document Directory sucessfully")
+            print ("=========")
+            print (String(data: data, encoding: .utf8)!)
+            
+        } catch {
+            print (" Unable to write to the Documents Directory")
+            print("=========")
+            print(error.localizedDescription)
+        }
+        
+    }
+    func loadFavourites() {
+        
+        let fileName = getDocumentsDirectory() .appendingPathComponent(saveFavouritesLabel)
+        print(fileName)
+        
+        //Attempt to load data
+        
+        do{
+            
+            
+            //Load the raw data
+            let data = try Data (contentsOf: fileName)
+            
+            //See the data that was writen
+            print ("Saved data to the Document Directory sucessfully")
+            print ("=========")
+            print (String(data: data, encoding: .utf8)!)
+            
+            
+            //Decode the JSON into Swift native file
+            //NOTE: we use [DadJoke] since we are loading into a list (array)
+            favourites = try JSONDecoder().decode([DadJoke].self, from: data)
+            
+            //Loads the data the was saved to the device
+            //Loading our data...
+            
+            
+        } catch {
+            //What went wrong
+            print("COuld not load the data from the stored JSON file")
+            print("=======")
+            print(error.localizedDescription)
+        }
+    }
 }
+
+
+
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
